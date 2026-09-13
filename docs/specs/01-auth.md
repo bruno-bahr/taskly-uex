@@ -5,13 +5,21 @@ Allow users to create their own account and log in, without relying on
 third-party OAuth providers, as required by the challenge scope.
 
 ## Scope
-- [ ] User registration (name, email, password)
-- [ ] Login with email/password
-- [ ] Logout
-- [ ] Persistent session (server-side, via Redis session driver)
-- [ ] Basic password validation rules (min length, confirmation field)
-- [ ] Authenticated users are redirected to `/dashboard` (project list)
-- [ ] Guests attempting to access protected routes are redirected to `/login`
+- [x] User registration (name, email, password)
+- [x] Login with email/password
+- [x] Logout
+- [x] Persistent session (server-side, via Redis session driver)
+- [x] Basic password validation rules (min length, confirmation field)
+- [x] Authenticated users are redirected to `/dashboard` (project list)
+- [x] Guests attempting to access protected routes are redirected to `/login`
+
+## Validation results
+Manually verified end-to-end via browser on 2026-09-13:
+- Registration creates account and logs in immediately
+- Logout + re-login with same credentials works
+- Unauthenticated access to `/dashboard` redirects to `/login`
+- Session persists across page refresh (confirmed Redis is actually storing
+  the session key, not silently falling back to another driver)
 
 ## Technical decisions
 - **Laravel Breeze (Livewire stack)** chosen as the auth scaffold. Rationale:
