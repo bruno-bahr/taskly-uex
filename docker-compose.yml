@@ -1,0 +1,70 @@
+cat > docker-compose.yml << 'EOF'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: taskly-app
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - taskly
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: taskly-nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - taskly
+
+  mysql:
+    image: mysql:8.0
+    container_name: taskly-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - taskly-mysql-data:/var/lib/mysql
+    networks:
+      - taskly
+
+  redis:
+    image: redis:alpine
+    container_name: taskly-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - taskly
+
+  node:
+    image: node:20-alpine
+    container_name: taskly-node
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    command: sh -c "npm install && npm run dev"
+    networks:
+      - taskly
+
+networks:
+  taskly:
+    driver: bridge
+
+volumes:
+  taskly-mysql-data:
+EOF
