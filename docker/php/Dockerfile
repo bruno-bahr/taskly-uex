@@ -1,4 +1,3 @@
-cat > docker/php/Dockerfile << 'EOF'
 FROM php:8.4-fpm
 
 # System dependencies
@@ -23,4 +22,3 @@ COPY . /var/www
 EXPOSE 9000
 
 CMD ["php-fpm"]
-EOF
