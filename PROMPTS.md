@@ -187,3 +187,33 @@ reported real output, and both iterated together on errors.
   records were correctly inserted even while the pivot `sync()` call was
   failing — used this to distinguish "data loss" from "one broken step in
   an otherwise-working flow" before deciding on the fix.
+
+## phase-04-attachments
+
+**Representative prompts:**
+- "vamos seguir com a fase 4" (after reviewing the open-phases checklist)
+- Developer chose the authenticated-route approach for downloads over a
+  simpler public-disk-link approach when explicitly asked to decide
+
+**What AI generated:**
+- `attachments` migration, `Attachment` model, `AttachmentObserver`
+  (physical file cleanup on delete), authenticated download route, file
+  upload UI integrated into the existing `TaskBoard` Livewire component
+
+**Manual review & corrections:**
+- Confirmed (not assumed) that a DB-level cascade delete does NOT trigger
+  Eloquent model events, meaning an Observer alone was insufficient —
+  `TaskBoard::deleteTask()` was explicitly updated to loop over and delete
+  each attachment via Eloquent before deleting the task, so the Observer's
+  `deleting` hook actually fires and removes the physical file. Verified
+  via direct filesystem inspection (`ls storage/app/public/attachments/`)
+  before and after a task deletion, not just by reading the code.
+- Found and fixed a real bug during interactive testing (not code review):
+  deleting a task while its own edit modal was still open caused a null
+  property access, because the Livewire component still held a reference
+  to the now-deleted task's ID and tried to re-fetch it on re-render. Fixed
+  by having `deleteTask()` close the form when the task being deleted
+  matches the one currently open for editing.
+- Cross-user authorization on the download route was tested with a real
+  second account and a real URL guess attempt, not assumed correct from
+  the `abort_unless` condition alone.

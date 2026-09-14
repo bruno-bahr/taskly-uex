@@ -154,6 +154,29 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="text-sm text-gray-600">Attachments</label>
+
+                    @if ($editingTaskId)
+                        @php $existingTask = \App\Models\Task::find($editingTaskId); @endphp
+                        <div class="space-y-1 mb-2">
+                            @foreach ($existingTask->attachments as $attachment)
+                                <div class="flex items-center justify-between text-xs bg-gray-50 px-2 py-1 rounded">
+                                    <a href="{{ route('attachments.download', $attachment) }}" class="text-indigo-600 truncate" target="_blank">
+                                        📎 {{ $attachment->original_name }}
+                                    </a>
+                                    <button type="button" wire:click="deleteAttachment({{ $attachment->id }})" wire:confirm="Delete this attachment?" class="text-gray-400 hover:text-red-500">✕</button>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <input type="file" wire:model="newAttachments" multiple class="text-sm">
+                    @error('newAttachments.*') <p class="text-xs text-red-500">{{ $message }}</p> @enderror
+
+                    <div wire:loading wire:target="newAttachments" class="text-xs text-gray-400 mt-1">Uploading...</div>
+                </div>
+
                 <div class="flex justify-end gap-2 pt-2">
                     <button wire:click="closeForm" class="text-sm px-3 py-1.5 border border-gray-300 rounded">Cancel</button>
                     <button wire:click="saveTask" class="text-sm px-3 py-1.5 bg-indigo-600 text-white rounded">Save</button>

@@ -6,9 +6,12 @@ use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\Task;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class TaskBoard extends Component
 {
+    use WithFileUploads;
+
     public Project $project;
 
     public string $viewMode = 'list'; // 'list' or 'kanban'
@@ -31,6 +34,8 @@ class TaskBoard extends Component
     public array $tags = [];
 
     public string $newTag = '';
+
+    public array $newAttachments = [];
 
     public function mount(Project $project): void
     {
@@ -88,6 +93,7 @@ class TaskBoard extends Component
             'fullDescription' => ['nullable', 'string'],
             'dueDate' => ['nullable', 'date'],
             'status' => ['required', 'in:' . implode(',', array_column(TaskStatus::cases(), 'value'))],
+            'newAttachments.*' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,webp,pdf'],
         ]);
 
         if ($this->editingTaskId) {
@@ -114,6 +120,19 @@ class TaskBoard extends Component
 
         $task->tags()->sync($tagIds);
 
+        foreach ($this->newAttachments as $file) {
+            $path = $file->store('attachments/' . $task->id, 'public');
+
+            $task->attachments()->create([
+                'file_path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+            ]);
+        }
+
+        $this->newAttachments = [];
+
         $this->closeForm();
     }
 
@@ -126,9 +145,21 @@ class TaskBoard extends Component
 
     public function deleteTask(Task $task): void
     {
-        $this->authorize('delete', $task);
+       $this->authorize('delete', $task);
 
+        if ($this->editingTaskId === $task->id) {
+            $this->closeForm();
+        }
+
+        $task->attachments->each->delete(); // triggers Observer, removing physical files
         $task->delete();
+    }
+
+    public function deleteAttachment(\App\Models\Attachment $attachment): void
+    {
+        $this->authorize('update', $attachment->task);
+
+        $attachment->delete(); // triggers Observer, removes physical file
     }
 
     public function closeForm(): void
@@ -147,12 +178,13 @@ class TaskBoard extends Component
         $this->status = 'not_started';
         $this->tags = [];
         $this->newTag = '';
+        $this->newAttachments = [];
     }
 
     public function render()
     {
         return view('livewire.task-board', [
-            'tasks' => $this->project->tasks()->with('tags')->latest()->get(),
+            'tasks' => $this->project->tasks()->with(['tags', 'attachments'])->latest()->get(),
             'statuses' => TaskStatus::cases(),
         ]);
     }
