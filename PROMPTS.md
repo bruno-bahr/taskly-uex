@@ -217,3 +217,33 @@ reported real output, and both iterated together on errors.
 - Cross-user authorization on the download route was tested with a real
   second account and a real URL guess attempt, not assumed correct from
   the `abort_unless` condition alone.
+
+## phase-06-seeder-and-docs
+
+**Representative prompts:**
+- "meu tempo é curto, quais pontos faltam para entregar uma solucao de um
+  bom nivel para o desafio" (developer asked for prioritization given time
+  constraints, not just more features)
+- "separa cada informacao" (developer requested the README be split into
+  README.md + docs/ARCHITECTURE.md rather than one long file, after
+  reviewing an initial single-file draft)
+
+**What AI generated:**
+- `README.md` (setup instructions, ports, links to other docs)
+- `docs/ARCHITECTURE.md` (architecture, data model, technical decisions —
+  split out after developer feedback on the initial combined draft)
+- `database/seeders/DatabaseSeeder.php` with a demo user and realistic,
+  varied sample data (multiple projects, tasks across all 4 statuses,
+  tags) instead of the framework's default single-user seeder
+
+**Manual review & corrections:**
+- The AI's initial README draft combined setup instructions with deep
+  architectural explanation in one file; developer pushed back and asked
+  for the content to be separated, which is a better fit for how each
+  audience actually reads the repo (a person cloning it wants setup first,
+  someone evaluating architecture wants that content isolated and linkable)
+- Seeder intentionally does not fabricate a fake file attachment (would
+  require committing a binary sample file to the repo for no real benefit)
+  — attachment upload/download was already manually validated end-to-end
+  in Phase 4, so the seeder focuses on what it's good for: giving an
+  evaluator realistic, browsable data on first login.
