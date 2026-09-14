@@ -6,28 +6,43 @@ required by the challenge, a status workflow, and a toggle between List and
 Kanban views. This is the core deliverable of the challenge.
 
 ## Scope
-- [ ] `tasks` migration: id, project_id (FK, cascade delete), title,
+- [x] `tasks` migration: id, project_id (FK, cascade delete), title,
       short_description, full_description, due_date (datetime), status
       (enum), timestamps
-- [ ] `Task` model: `belongsTo(Project)`, `belongsToMany(Tag)` (via pivot),
+- [x] `Task` model: `belongsTo(Project)`, `belongsToMany(Tag)` (via pivot),
       `hasMany(Attachment)` (attachments handled in Spec 05, but the
       relationship is defined here so `Task` is complete)
-- [ ] `TaskPolicy`: authorization derives from the parent project's owner
+- [x] `TaskPolicy`: authorization derives from the parent project's owner
       (a task's "owner" is its project's owner — no direct `user_id` on
       `tasks`, to avoid duplicated/divergent ownership data)
-- [ ] Task CRUD: create, edit (all fields, including after creation), delete
-- [ ] Status field with 4 values: `not_started`, `in_progress`, `completed`,
+- [x] Task CRUD: create, edit (all fields, including after creation), delete
+- [x] Status field with 4 values: `not_started`, `in_progress`, `completed`,
       `cancelled` — user can change status at any time
-- [ ] List view: tasks in the active project shown as rows/cards, grouped or
+- [x] List view: tasks in the active project shown as rows/cards, grouped or
       sortable by status
-- [ ] Kanban view: tasks shown in columns per status, matching the 4 status
+- [x] Kanban view: tasks shown in columns per status, matching the 4 status
       values above
-- [ ] Toggle button switching between List and Kanban (per project, not a
+- [x] Toggle button switching between List and Kanban (per project, not a
       single global app-wide preference — reflects the mock reference which
       shows the toggle scoped to a project's task board)
-- [ ] Tags: free-form, user types and creates on-the-fly (chip-style input),
+- [x] Tags: free-form, user types and creates on-the-fly (chip-style input),
       reusable across tasks within the same project scope
-- [ ] Due date: date + time input, displayed in a human-readable format
+- [x] Due date: date + time input, displayed in a human-readable format
+
+## Validation results
+Manually verified end-to-end via browser on 2026-09-14:
+- Created a task with title, both descriptions, due date, status, and
+  multiple tags — all persisted correctly
+- Task appears correctly in both List and Kanban views, in the right
+  status column
+- Editing a task re-opens the modal pre-filled with current values
+  (including tags and formatted due date)
+- Changing status via the List dropdown moves the task to the correct
+  Kanban column on next toggle
+- Delete with confirmation works from both views
+- Authorization inherited correctly from the project owner (no separate
+  `user_id` on tasks needed — verified via `TaskPolicy` traversing
+  `task->project->user_id`)
 
 ## Technical decisions
 - **Authorization inheritance**: `TaskPolicy` checks
@@ -49,6 +64,12 @@ Kanban views. This is the core deliverable of the challenge.
   string column with app-level validation only — gives static typing and a
   single source of truth for the 4 allowed values, reused in both the
   List and Kanban views.
+- **Pivot table name**: explicitly declared as `task_tag` on both sides of
+  the `belongsToMany` relationship. Eloquent's default convention would
+  expect `tag_task` (alphabetical order of model names), which didn't match
+  our migration's table name — declaring it explicitly avoids relying on
+  a naming convention that's easy to get wrong when the table was created
+  before the relationship code.
 
 ## Out of scope for this phase
 - Attachments/photo uploads (Spec 05 — kept separate since file handling

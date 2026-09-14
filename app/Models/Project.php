@@ -22,4 +22,9 @@ class Project extends Model
     {
         return $this->hasMany(Task::class);
     }
+
+    public function tags(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Tag::class);
+    }
 }

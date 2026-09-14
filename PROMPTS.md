@@ -154,3 +154,36 @@ reported real output, and both iterated together on errors.
   manual, real (not assumed) validation step — browser testing for UI/auth
   flows, direct DB schema inspection for migrations, and two-account
   testing for authorization boundaries.
+
+## phase-03-tasks
+
+**Representative prompts:**
+- "seria possivel otimizar nosso tempo gerando mais codigo, testando e
+  comitando?" (developer explicitly requested larger, batched code
+  generation rather than step-by-step, given the workflow was already
+  validated as stable in prior phases)
+
+**What AI generated:**
+- `tasks`, `tags`, `task_tag` migrations; `Task`/`Tag` models; `TaskStatus`
+  PHP enum; `TaskPolicy`; `TaskBoard` Livewire component (create/edit modal,
+  List view, Kanban view, view toggle, tag chip input)
+
+**Manual review & corrections:**
+- Migration ordering bug: `create_task_tag_table` and `create_tasks_table`
+  were generated with identical timestamps, causing the pivot table
+  migration (which has a foreign key to `tasks`) to run *before* `tasks`
+  existed — caught immediately from the real migration failure
+  (`Failed to open the referenced table 'tasks'`), not anticipated in
+  advance. Fixed by renaming migration files to enforce correct order.
+- Eloquent pivot table naming convention bug: `belongsToMany` was declared
+  without an explicit pivot table name, so Eloquent assumed the
+  alphabetical default (`tag_task`), which didn't match the actual
+  migration's table name (`task_tag`, matching the developer-facing entity
+  order used throughout specs/docs). Caught from a live `QueryException`
+  after actually creating a task and tags in the browser (not caught by
+  code review alone) — corrected by explicitly declaring the pivot table
+  name on both sides of the relationship.
+- Confirmed via real Livewire request logs (not assumed) that task and tag
+  records were correctly inserted even while the pivot `sync()` call was
+  failing — used this to distinguish "data loss" from "one broken step in
+  an otherwise-working flow" before deciding on the fix.
