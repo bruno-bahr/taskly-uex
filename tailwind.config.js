@@ -12,7 +12,17 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                serif: ['Fraunces', ...defaultTheme.fontFamily.serif],
+            },
+            colors: {
+                ink: '#1B1E27',
+                paper: '#F6F5F1',
+                surface: '#FFFFFF',
+                line: '#E5E3DC',
+                amber: {
+                    DEFAULT: '#B45309',
+                },
             },
         },
     },

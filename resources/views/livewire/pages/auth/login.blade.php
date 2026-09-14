@@ -56,9 +56,9 @@ new #[Layout('layouts.guest')] class extends Component
             </label>
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+         <div class="flex items-center justify-end mt-4">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}" wire:navigate>
+                <a class="underline text-sm text-ink/60 hover:text-ink rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}" wire:navigate>
                     {{ __('Forgot your password?') }}
                 </a>
             @endif
@@ -68,4 +68,11 @@ new #[Layout('layouts.guest')] class extends Component
             </x-primary-button>
         </div>
     </form>
+
+    <p class="mt-6 text-sm text-center text-ink/60">
+        {{ __("Don't have an account?") }}
+        <a href="{{ route('register') }}" wire:navigate class="text-indigo font-medium hover:underline">
+            {{ __('Sign up') }}
+        </a>
+    </p>
 </div>
