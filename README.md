@@ -93,3 +93,8 @@ docker compose exec app php artisan test
 All minimum-scope requirements from the challenge are implemented:
 authentication, projects, tasks (all required fields, status workflow,
 list/Kanban toggle), and attachments.
+
+A cloud deployment (Railway) was attempted but not completed within the
+challenge's time budget — see `PROMPTS.md` (phase-08-deploy-attempt) for
+what was tried and why it was deprioritized. The application is fully
+runnable locally via the Docker Compose setup documented above.
