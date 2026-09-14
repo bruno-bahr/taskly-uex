@@ -135,26 +135,6 @@ reported real output, and both iterated together on errors.
   `startEditing` having been called first) — implemented defensively from
   the start rather than discovered as a bug later.
 
----
-
-## General patterns worth noting for evaluation
-
-- The single most common category of AI-introduced defect in this project
-  was **shell heredoc corruption** (command text leaking into generated
-  files). This was never assumed away — every file the AI generated via a
-  shell command block was verified with `cat`/`tail` before being trusted,
-  which is how each occurrence was caught quickly instead of compounding.
-- The second most common category was **file-ownership/permission
-  mismatches** between the Docker container's process user and the host
-  editor (VS Code/WSL), which repeatedly caused *silent* save failures —
-  the file looked edited in the editor but was unchanged on disk. This was
-  eventually fixed at the infrastructure level rather than patched
-  reactively each time.
-- No AI-suggested code was merged into a phase without a corresponding
-  manual, real (not assumed) validation step — browser testing for UI/auth
-  flows, direct DB schema inspection for migrations, and two-account
-  testing for authorization boundaries.
-
 ## phase-03-tasks
 
 **Representative prompts:**
@@ -217,6 +197,41 @@ reported real output, and both iterated together on errors.
 - Cross-user authorization on the download route was tested with a real
   second account and a real URL guess attempt, not assumed correct from
   the `abort_unless` condition alone.
+
+## phase-05-visual-design
+
+**Representative prompts:**
+- "vamos melhorar a apresentacao da pagina, crie um estilo simples, mas
+  funcional e elegante. hoje a pagina mostra uma logo gigante do laravel e
+  as informacoes estao empilhadas no inferior esquerdo"
+
+**What AI generated:**
+- A small design token system (colors, type pairing: Inter + Fraunces serif
+  for headings/wordmark) proposed and confirmed with the developer before
+  writing code
+- Updated `tailwind.config.js`, `layouts/guest.blade.php`,
+  `layouts/app.blade.php`, and `livewire/layout/navigation.blade.php` to
+  apply the new tokens and remove Breeze's default Laravel logo/wordmark
+- Added a missing "Sign up" link on the login page after developer feedback
+
+**Manual review & corrections:**
+- After applying the changes and rebuilding assets, the page rendered with
+  zero styling at all (not just missing the new design — even previously
+  working Tailwind classes were gone). Diagnosed step by step rather than
+  re-guessing at the CSS: confirmed the Vite build succeeded and produced
+  real asset files, confirmed the files were servable via direct `curl`,
+  then inspected the actual HTML Laravel was serving via `curl`, which
+  revealed the `@vite()` directive was pointing at `http://[::1]:5173`
+  (Vite's dev server) instead of the built `public/build/assets/` files.
+- Root cause: a leftover `public/hot` file (created by an earlier `npm run
+  dev` invocation from Phase 0's original Docker Compose config, before
+  the `node` service was changed to build-only) signals to Laravel's Vite
+  integration that a dev server is running and should be used instead of
+  the production build — even though no dev server was actually running,
+  causing every asset request to silently fail. Fixed by deleting
+  `public/hot` and adding it to `.gitignore`; not something that would
+  have been caught by reviewing the new Blade/Tailwind code alone, since
+  the new code was correct all along.
 
 ## phase-06-seeder-and-docs
 
@@ -293,3 +308,24 @@ reported real output, and both iterated together on errors.
 - Final result: 37 tests, 95 assertions, all passing — including full
   coverage of the cross-user authorization boundary for both Projects and
   Tasks, which had previously only been verified manually.
+
+---
+
+## General patterns worth noting for evaluation
+
+- The single most common category of AI-introduced defect in this project
+  was **shell heredoc corruption** (command text leaking into generated
+  files). This was never assumed away — every file the AI generated via a
+  shell command block was verified with `cat`/`tail` before being trusted,
+  which is how each occurrence was caught quickly instead of compounding.
+- The second most common category was **file-ownership/permission
+  mismatches** between the Docker container's process user and the host
+  editor (VS Code/WSL), which repeatedly caused *silent* save failures —
+  the file looked edited in the editor but was unchanged on disk. This was
+  eventually fixed at the infrastructure level rather than patched
+  reactively each time.
+- No AI-suggested code was merged into a phase without a corresponding
+  manual, real (not assumed) validation step — browser testing for UI/auth
+  flows, direct DB schema inspection for migrations, and two-account
+  testing for authorization boundaries.
+
