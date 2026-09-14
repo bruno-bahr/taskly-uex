@@ -1,0 +1,79 @@
+# Spec 03 — Tasks
+
+## Goal
+Allow a user to create and manage tasks within a project, with all fields
+required by the challenge, a status workflow, and a toggle between List and
+Kanban views. This is the core deliverable of the challenge.
+
+## Scope
+- [ ] `tasks` migration: id, project_id (FK, cascade delete), title,
+      short_description, full_description, due_date (datetime), status
+      (enum), timestamps
+- [ ] `Task` model: `belongsTo(Project)`, `belongsToMany(Tag)` (via pivot),
+      `hasMany(Attachment)` (attachments handled in Spec 05, but the
+      relationship is defined here so `Task` is complete)
+- [ ] `TaskPolicy`: authorization derives from the parent project's owner
+      (a task's "owner" is its project's owner — no direct `user_id` on
+      `tasks`, to avoid duplicated/divergent ownership data)
+- [ ] Task CRUD: create, edit (all fields, including after creation), delete
+- [ ] Status field with 4 values: `not_started`, `in_progress`, `completed`,
+      `cancelled` — user can change status at any time
+- [ ] List view: tasks in the active project shown as rows/cards, grouped or
+      sortable by status
+- [ ] Kanban view: tasks shown in columns per status, matching the 4 status
+      values above
+- [ ] Toggle button switching between List and Kanban (per project, not a
+      single global app-wide preference — reflects the mock reference which
+      shows the toggle scoped to a project's task board)
+- [ ] Tags: free-form, user types and creates on-the-fly (chip-style input),
+      reusable across tasks within the same project scope
+- [ ] Due date: date + time input, displayed in a human-readable format
+
+## Technical decisions
+- **Authorization inheritance**: `TaskPolicy` checks
+  `$user->id === $task->project->user_id` rather than storing a redundant
+  `user_id` on `tasks`. Rationale: a task's ownership is entirely defined
+  by which project it belongs to; storing it twice risks the two values
+  diverging (e.g. if a task were ever transferable between projects) and
+  adds no query benefit at this scale.
+- **View state (List/Kanban)**: kept as local Livewire component state
+  (not persisted to the DB or session) for this phase — simplest option
+  that satisfies the requirement ("user can toggle"). Persisting the
+  preference is a candidate stretch-goal, not core scope.
+- **Tags storage**: normalized (`tags` + `task_tag` pivot) rather than a
+  comma-separated string column, so tags are queryable/filterable later
+  (relevant for the "data analysis" requirement in the job posting) and to
+  avoid duplicate/inconsistent tag spelling issues that a free-text column
+  would allow.
+- **Status as a PHP native enum** (backed by string values), not a plain
+  string column with app-level validation only — gives static typing and a
+  single source of truth for the 4 allowed values, reused in both the
+  List and Kanban views.
+
+## Out of scope for this phase
+- Attachments/photo uploads (Spec 05 — kept separate since file handling
+  has distinct concerns: storage disk, validation, size limits)
+- Drag-and-drop reordering within Kanban columns (stretch goal — see
+  Spec 04 if implemented)
+- Filtering by tag/status (stretch goal)
+- Due-date reminders/notifications (not required by the challenge)
+
+## Acceptance criteria
+- A user can create a task with all required fields inside a project they own
+- All fields (title, both descriptions, due date, tags) remain editable
+  after the task is created — verified by editing each field independently
+  and confirming persistence after reload
+- Status can be changed to any of the 4 values at any time, from both the
+  List and Kanban views
+- Switching the List/Kanban toggle shows the same underlying tasks, just
+  laid out differently — no data loss or divergence between views
+- A user cannot view or modify a task belonging to a project they don't own,
+  even via a forged task ID (verified with two accounts, same as Spec 02)
+- Deleting a project deletes its tasks (cascade, verified at the DB level)
+
+## AI usage notes
+- Prompts used: see `PROMPTS.md` (entry: "phase-03-tasks")
+- Manual review focus: confirm `TaskPolicy` correctly traverses
+  `task->project->user_id` (not a shortcut that only checks route-level
+  project binding, which could be bypassed if a task ID from a different
+  project is submitted through a Livewire action payload)
