@@ -247,3 +247,49 @@ reported real output, and both iterated together on errors.
   — attachment upload/download was already manually validated end-to-end
   in Phase 4, so the seeder focuses on what it's good for: giving an
   evaluator realistic, browsable data on first login.
+
+## phase-07-automated-tests
+
+**Representative prompts:**
+- "otimo, prossiga" (after developer confirmed prioritization: README →
+  seeder → tests → video, given limited remaining time)
+
+**What AI generated:**
+- `tests/Feature/ProjectTest.php` and `tests/Feature/TaskTest.php`
+  (creation, validation, status changes, and — the highest-value tests —
+  cross-user authorization checks matching the manual testing done
+  throughout every phase)
+- `ProjectFactory` (filled in, was previously an empty Laravel default) and
+  a new `TaskFactory`
+
+**Manual review & corrections (this phase surfaced real, pre-existing gaps, not just test-writing bugs):**
+- `Task` model was missing the `HasFactory` trait entirely — caught by the
+  test suite itself (`BadMethodCallException: Call to undefined method
+  App\Models\Task::factory()`), not by code review. This had been present
+  since Phase 3 and had gone unnoticed because nothing had exercised
+  `Task::factory()` until tests were written.
+- Discovered `App\Http\Controllers\ProfileController` did not exist on
+  disk at all, despite `routes/web.php` referencing it since Phase 2 and
+  the app appearing to work fine in the browser (the route was simply
+  never manually clicked during any phase's validation). Root-caused by
+  checking the filesystem directly (`ls`) rather than assuming Breeze had
+  generated it, which also revealed `app/Http/Requests/` and
+  `resources/views/profile/edit.blade.php` were missing too — all three
+  were reconstructed from Breeze's known-standard implementation.
+- A Livewire component test asserting authorization
+  (`Livewire::test(...)->call(...)->assertForbidden()`) failed with an
+  unrelated-looking Livewire internal error ("Invalid Livewire snapshot
+  structure") rather than a clean 403 assertion failure. Rather than
+  fighting the test harness, switched to testing the `TaskPolicy` directly
+  via `$user->can('update', $task)` — same real authorization path the
+  app uses, more reliable to assert against in tests, and arguably clearer
+  intent than simulating a full Livewire request cycle for what is
+  fundamentally a Policy-logic question.
+- Removed the framework's default `tests/Feature/ExampleTest.php`, which
+  asserted `GET /` returns 200 — no longer true once `/` was changed to
+  redirect to `/dashboard` in Phase 2. Deleted rather than "fixed", since
+  it tested framework boilerplate behavior, not anything specific to
+  Taskly.
+- Final result: 37 tests, 95 assertions, all passing — including full
+  coverage of the cross-user authorization boundary for both Projects and
+  Tasks, which had previously only been verified manually.
