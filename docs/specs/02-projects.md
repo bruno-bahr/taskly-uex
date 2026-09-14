@@ -5,15 +5,29 @@ Allow an authenticated user to create, view, rename, and organize multiple
 projects. Projects are the top-level container tasks belong to (see Spec 03).
 
 ## Scope
-- [ ] `projects` migration: id, user_id (FK), name, timestamps
-- [ ] `Project` model with `belongsTo(User)` / `User hasMany(Project)`
-- [ ] `ProjectPolicy`: a user may only view/update/delete their own projects
-- [ ] Livewire component: project sidebar (list, create, select active project)
-- [ ] Create project (name only, required, max length validation)
-- [ ] Rename project (inline edit or modal — decided during implementation)
-- [ ] Delete project (with confirmation; cascades to its tasks — see below)
-- [ ] Dashboard route (`/dashboard`) shows the project list and, once a
+- [x] `projects` migration: id, user_id (FK), name, timestamps
+- [x] `Project` model with `belongsTo(User)` / `User hasMany(Project)`
+- [x] `ProjectPolicy`: a user may only view/update/delete their own projects
+- [x] Livewire component: project sidebar (list, create, select active project)
+- [x] Create project (name only, required, max length validation)
+- [x] Rename project (inline edit, with hover-revealed icon + native tooltip)
+- [x] Delete project (with confirmation; cascades to its tasks — see below)
+- [x] Dashboard route (`/dashboard`) shows the project list and, once a
       project is selected, forwards to `/projects/{project}`
+
+## Validation results
+Manually verified end-to-end via browser on 2026-09-13:
+- Create, list, rename, and delete all work through the sidebar UI
+- Rename: `startEditing` and `saveRename` both independently call
+  `$this->authorize('update', $project)` — verified this isn't just a
+  UI-level guard, since `saveRename` re-fetches the project by ID rather
+  than trusting an injected model
+- Cross-user authorization tested with two real accounts: second user
+  attempting to access `/projects/1` (owned by the first user) via direct
+  URL correctly received a 403, confirming the `can:view,project` route
+  middleware works against Policy, not just route/UI visibility
+- Unauthenticated access to `/projects/{id}` redirects to `/login` (auth
+  middleware layer, checked before the Policy layer)
 
 ## Technical decisions
 - **Cascade on delete**: deleting a project deletes its tasks (and their
